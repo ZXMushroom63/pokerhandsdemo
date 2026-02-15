@@ -96,15 +96,27 @@
     </style>
     <script>
         function fact(n) {
-            if (!isFinite(n)) {
-                throw new Error("factorial function called with undefined or infinite number");
-            }
-            if (n === 0) {
-                return 1;
-            } else if (n < 0) {
+            if (n === 0n) {
+                return 1n;
+            } else if (n < 0n) {
                 throw new Error("factorial function called with subzero input, invalid configuration");
             } else {
-                return n * fact(n - 1);
+                let product = n;
+                let curr = n - 1n;
+                while (curr > 0n) {
+                    product *= curr;
+                    curr--;
+                }
+                return product;
+            }
+        }
+        function factRecursive(n) {
+            if (n === 0n) {
+                return 1n;
+            } else if (n < 0n) {
+                throw new Error("factorial function called with subzero input, invalid configuration");
+            } else {
+                return n * fact(n - 1n);
             }
         }
         function perm(n, r) {
@@ -116,15 +128,15 @@
         const definitions = {
             "total": (d, h, s, r, k) => comb(d, h),
             "highcard": (d, h, s, r, k) => (comb(r, h) - k) * (s**h - s),
-            "onepair": (d, h, s, r, k) => comb(r, 1) * comb(s, 2) * comb(r - 1, h - 2) * (comb(s, 1)**(h-2)),
-            "twopair": (d, h, s, r, k) => comb(r, 2) * (comb(s, 2)**2) * comb(r - 2, h - 4) * (comb(s, 1)**(h-4)),
-            "threekind": (d, h, s, r, k) => comb(r, 1) * comb(s, 3) * comb(r - 1, h - 3) * s**(h-3),
-            "fullhouse": (d, h, s, r, k) => comb(r, 2) * comb(s, 3) * comb(s, 2) * comb(r - 2, h - 5) * s**(h-5),
-            "fourkind": (d, h, s, r, k) => comb(r, 1) * comb(s, 4) * comb(d - 4, 1),
-            "royalflush": (d, h, s, r, k) => 1 * comb(h, h) * s,
-            "straightflush": (d, h, s, r, k) => (k - 1) * comb(s, 1),
+            "onepair": (d, h, s, r, k) => comb(r, 1n) * comb(s, 2n) * comb(r - 1n, h - 2n) * (comb(s, 1n)**(h-2n)),
+            "twopair": (d, h, s, r, k) => comb(r, 2n) * (comb(s, 2n)**2n) * comb(r - 2n, h - 4n) * (comb(s, 1n)**(h-4n)),
+            "threekind": (d, h, s, r, k) => comb(r, 1n) * comb(s, 3n) * comb(r - 1n, h - 3n) * s**(h-3n),
+            "fullhouse": (d, h, s, r, k) => comb(r, 2n) * comb(s, 3n) * comb(s, 2n) * comb(r - 2n, h - 5n) * s**(h-5n),
+            "fourkind": (d, h, s, r, k) => comb(r, 1n) * comb(s, 4n) * comb(d - 4n, 1n),
+            "royalflush": (d, h, s, r, k) => 1n * comb(h, h) * s,
+            "straightflush": (d, h, s, r, k) => (k - 1n) * comb(s, 1n),
             "straight": (d, h, s, r, k) => k * (s**h) - definitions.straightflush(d, h, s, r, k) - definitions.royalflush(d, h, s, r, k),
-            "flush": (d, h, s, r, k) => comb(s, 1) * comb(r, h) - definitions.straightflush(d, h, s, r, k) - definitions.royalflush(d, h, s, r, k),
+            "flush": (d, h, s, r, k) => comb(s, 1n) * comb(r, h) - definitions.straightflush(d, h, s, r, k) - definitions.royalflush(d, h, s, r, k),
         }
         const bg = document.querySelector("#bg");
         Object.entries(definitions).forEach(ent => {
@@ -153,24 +165,32 @@
         }
         function getConfValues() {
             return {
-                r: assertZahlen(document.querySelector("#r").value || 13),
-                s: assertZahlen(document.querySelector("#s").value || 4),
-                h: assertZahlen(document.querySelector("#h").value || 5),
+                r: BigInt(assertZahlen(document.querySelector("#r").value || 13)),
+                s: BigInt(assertZahlen(document.querySelector("#s").value || 4)),
+                h: BigInt(assertZahlen(document.querySelector("#h").value || 5)),
             }
         }
         function calculate(out) {
             const {r, s, h} = getConfValues();
             const d = s * r;
+            document.querySelector("#decksize").innerText = `[d]eck size = ${d}`;
             if (! (h <= r)) {
                 throw new Error("h < r");
             }
             if (! (r <= d)) {
                 throw new Error("h < r");
             };
-            const k = r + 2 - h;
+            const k = r + 2n - h;
             out.innerText = "Results:";
-            Object.entries(definitions).map(ent => [ent[0], ent[1](d, h, s, r, k)]).toSorted((a, b)=>a[1] - b[1]).forEach(ent => {
-                console.log("calculating " + ent[0]);
+            Object.entries(definitions).map(
+                ent => [
+                    ent[0],
+                    ent[1](d, h, s, r, k)
+                ]
+            ).toSorted(
+                (a, b)=>(a[1] - b[1])>0 ? 1 : -1
+            ).forEach(ent => {
+                //console.log("calculating " + ent[0]);
                 out.innerText += `\n${ent[0]} = ${ent[1]}`;
             });
         }
@@ -183,7 +203,11 @@
                 calculate(out);
                 bg.innerText = bg.innerText.split("completed in")[0] + `completed in ${(performance.now() - start).toFixed(2)}ms`;
             } catch(e) {
-                out.innerText = e.toString();
+                let ttext = "";
+                try {
+                    ttext = (e.stack ? "\n Failed to calculate: " + e.stack.split("\n")[4].split("Array.")[1].split(" (")[0] : "");
+                } catch(f) {}
+                out.innerText = e.toString() + ttext;
                 console.error(e);
             }
         };
