@@ -107,6 +107,9 @@
                     product *= curr;
                     curr--;
                 }
+                if (product < 1n) {
+                    console.log(product);
+                }
                 return product;
             }
         }
@@ -131,7 +134,7 @@
             "onepair": (d, h, s, r, k) => comb(r, 1n) * comb(s, 2n) * comb(r - 1n, h - 2n) * (comb(s, 1n)**(h-2n)),
             "twopair": (d, h, s, r, k) => comb(r, 2n) * (comb(s, 2n)**2n) * comb(r - 2n, h - 4n) * (comb(s, 1n)**(h-4n)),
             "threekind": (d, h, s, r, k) => comb(r, 1n) * comb(s, 3n) * comb(r - 1n, h - 3n) * s**(h-3n),
-            "fullhouse": (d, h, s, r, k) => comb(r, 2n) * comb(s, 3n) * comb(s, 2n) * comb(r - 2n, h - 5n) * s**(h-5n),
+            "fullhouse": (d, h, s, r, k) => perm(r, 2n) * comb(s, 3n) * comb(s, 2n) * comb(r - 2n, h - 5n) * s**(h-5n),
             "fourkind": (d, h, s, r, k) => comb(r, 1n) * comb(s, 4n) * comb(d - 4n, 1n),
             "royalflush": (d, h, s, r, k) => 1n * comb(h, h) * s,
             "straightflush": (d, h, s, r, k) => (k - 1n) * comb(s, 1n),
@@ -170,6 +173,9 @@
                 h: BigInt(assertZahlen(document.querySelector("#h").value || 5)),
             }
         }
+        function ewrap(fn) {
+          return (...args) => {try { return fn(...args) } catch(e){return -1n;}};
+        }
         function calculate(out) {
             const {r, s, h} = getConfValues();
             const d = s * r;
@@ -185,13 +191,13 @@
             Object.entries(definitions).map(
                 ent => [
                     ent[0],
-                    ent[1](d, h, s, r, k)
+                    ewrap(ent[1])(d, h, s, r, k)
                 ]
             ).toSorted(
                 (a, b)=>(a[1] - b[1])>0 ? 1 : -1
             ).forEach(ent => {
                 //console.log("calculating " + ent[0]);
-                out.innerText += `\n${ent[0]} = ${ent[1]}`;
+                out.innerText += `\n${ent[0]} = ${ent[1] === -1n ? (ent[1] < -1n ? "integer overflow" : "impossible") : ent[1].toString()}`;
             });
         }
         const inputCallback = async ()=>{
